@@ -1,0 +1,43 @@
+{
+  "name": "solidity-treemap",
+  "version": "0.0.1",
+  "description": "A Red-Black tree based Navigable Order Static Map in Solidity",
+  "main": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/saurfang/solidity-treemap"
+  },
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "truffle test",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "lint:sol": "solium -d .",
+    "lint:sol:fix": "solium -d . --fix",
+    "lint:all": "npm run lint && npm run lint:sol",
+    "lint:all:fix": "npm run lint:fix && npm run lint:sol:fix",
+    "coverage": "./node_modules/.bin/solidity-coverage && cat coverage/lcov.info | node_modules/.bin/coveralls"
+  },
+  "keywords": [
+    "solidity"
+  ],
+  "author": "Forest Fang <forest.fang@outlook.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "chai": "^4.1.2",
+    "chai-as-promised": "^7.1.1",
+    "chai-bignumber": "^2.0.2",
+    "coveralls": "^3.0.1",
+    "eslint": "^4.19.1",
+    "eslint-config-airbnb-base": "^12.1.0",
+    "eslint-plugin-import": "^2.11.0",
+    "solidity-coverage": "^0.5.0",
+    "solium": "^1.1.7",
+    "source-map-support": "^0.5.6",
+    "truffle": "^4.1.8"
+  }
+}
