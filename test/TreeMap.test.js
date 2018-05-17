@@ -1,4 +1,4 @@
-import { shuffle, printMap, alternatingOutsideInOrder } from './utils';
+import { shuffle, alternatingOutsideInOrder } from './utils';
 
 const { BigNumber } = web3;
 const TreeMapMock = artifacts.require('TreeMapMock');

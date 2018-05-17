@@ -38,7 +38,7 @@ contract TreeMapMock {
     color = new bool[](sortedMap.entriesLength + 1);
     hasData = new bool[](sortedMap.entriesLength + 1);
 
-    for (uint i = 0; i <= sortedMap.entriesLength; i++){
+    for (uint i = 0; i <= sortedMap.entriesLength; i++) {
       TreeMap.Entry storage entry = sortedMap.entries[i];
       keys[i] = entry.key;
       values[i] = entry.value;
@@ -98,7 +98,7 @@ contract TreeMapMock {
     replaced = new bool[](keys.length);
     oldValues = new uint[](keys.length);
 
-    for(uint i = 0; i < keys.length; i++) {
+    for (uint i = 0; i < keys.length; i++) {
       (replaced[i], oldValues[i]) = put(keys[i], values[i]);
     }
   }
@@ -117,7 +117,7 @@ contract TreeMapMock {
     removed = new bool[](keys.length);
     oldValues = new uint[](keys.length);
 
-    for(uint i = 0; i < keys.length; i++) {
+    for (uint i = 0; i < keys.length; i++) {
       (removed[i], oldValues[i]) = remove(keys[i]);
     }
   }

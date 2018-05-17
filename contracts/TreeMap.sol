@@ -1,5 +1,6 @@
 pragma solidity ^0.4.23;
 
+
 /// @title A navigatable sorted map that supports insertion, deletion, single item lookup,
 ///  and range lookup in logarithmic runtime.
 ///  Due to lack of generics in Solidity, both key and value are uint. One can trivially use this to
@@ -109,7 +110,13 @@ library TreeMap {
     }
 
     index = ++self.entriesLength;
-    self.entries[index] = Entry(key, value, [uint(0), uint(0)], RED, true);
+    self.entries[index] = Entry(
+      key,
+      value,
+      [uint(0), uint(0)],
+      RED,
+      true
+    );
 
     entry = self.entries[index];
 
@@ -249,7 +256,7 @@ library TreeMap {
       uint8 lastDirection = LEFT;
 
       // search down the tree
-      while(true) {
+      while (true) {
         if (!current.hasData) {
           // insert new node at the bottom
           (currentIdx, current) = _makeEntry(self, key, value);
@@ -419,7 +426,7 @@ library TreeMap {
       uint8 lastDirection = direction;
 
       // search and push a red down
-      while(current.links[direction] != 0) {
+      while (current.links[direction] != 0) {
         // update helper and traverse down
         grandParent = parent;
         parentIdx = currentIdx;
@@ -551,7 +558,7 @@ library TreeMap {
     if (self.rootIdx != 0) {
       Entry storage current = self.entries[self.rootIdx];
 
-      while(current.hasData) {
+      while (current.hasData) {
         if (current.key == key) {
           found = true;
           value = current.value;
@@ -590,7 +597,7 @@ library TreeMap {
   {
     Entry storage current = self.entries[self.rootIdx];
 
-    while(current.hasData) {
+    while (current.hasData) {
       if (current.key == _key) {
         found = true;
         key = current.key;
@@ -618,7 +625,7 @@ library TreeMap {
   {
     Entry storage current = self.entries[self.rootIdx];
 
-    while(current.hasData) {
+    while (current.hasData) {
       if (current.key >= _key) {
         current = _leftChild(self, current);
       } else {
@@ -641,7 +648,7 @@ library TreeMap {
   {
     Entry storage current = self.entries[self.rootIdx];
 
-    while(current.hasData) {
+    while (current.hasData) {
       if (current.key == _key) {
         found = true;
         key = current.key;
@@ -669,7 +676,7 @@ library TreeMap {
   {
     Entry storage current = self.entries[self.rootIdx];
 
-    while(current.hasData) {
+    while (current.hasData) {
       if (current.key <= _key) {
         current = _rightChild(self, current);
       } else {
