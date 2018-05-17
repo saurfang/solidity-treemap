@@ -1,4 +1,6 @@
 [![Build Status](https://travis-ci.org/saurfang/solidity-treemap.svg?branch=master)](https://travis-ci.org/saurfang/solidity-treemap)
+[![Coverage Status](https://coveralls.io/repos/github/saurfang/solidity-treemap/badge.svg?branch=master)](https://coveralls.io/github/saurfang/solidity-treemap?branch=master)
+[![npm version](https://badge.fury.io/js/solidity-treemap.svg)](https://badge.fury.io/js/solidity-treemap)
 
 # solidity-treemap
 
