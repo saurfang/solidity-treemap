@@ -33,6 +33,13 @@ start_ganache() {
   ganache_pid=$!
 }
 
+if ganache_running; then
+  echo "Using existing ganache instance"
+else
+  echo "Starting our own ganache instance"
+  start_ganache
+fi
+
 if [ "$SOLC_NIGHTLY" = true ]; then
   echo "Downloading solc nightly"
   wget -q https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/bin/soljson-nightly.js -O /tmp/soljson.js && find . -name soljson.js -exec cp /tmp/soljson.js {} \;
@@ -45,12 +52,5 @@ if [ "$SOLIDITY_COVERAGE" = true ]; then
     cat coverage/lcov.info | node_modules/.bin/coveralls
   fi
 else
-  if ganache_running; then
-    echo "Using existing ganache instance"
-  else
-    echo "Starting our own ganache instance"
-    start_ganache
-  fi
-
   node_modules/.bin/truffle test "$@"
 fi
