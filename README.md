@@ -9,10 +9,7 @@ A work in progress treemap implementation using red-black tree.
 ## TODO
 
 - [ ] Increase test coverage
-  - [ ] Guarantee converage on single and double roration during insertion and deletion in both directions
   - [ ] Test revert cases
-- [ ] Prefix all parameters with `_` for readability
-- [ ] Refactor test helpers such as `_assert` into its own library or test contract
 - [ ] Refactor library into smaller modules. For example, seperate red-black tree and search/zipper code
 - [ ] Expand function interface
   - [ ] Enable in-order [iteration](https://github.com/ethereum/dapp-bin/blob/master/library/iterable_mapping.sol) over entries

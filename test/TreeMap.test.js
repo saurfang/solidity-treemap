@@ -176,4 +176,101 @@ contract('TreeMapMock', () => {
     //   }
     // });
   });
+
+  describe('navigable map', () => {
+    it('can find ceiling and floor entries', async () => {
+      // 1, 3, 5, ...
+      const index = keys.map((x, i) => (i * 2) + 1);
+      await treeMap.putAll(index, index.map(toValue));
+
+      const minKey = index[0];
+      const maxKey = index[index.length - 1];
+
+      // edge cases where key doesn't exist
+      ((await treeMap.floorEntry(minKey - 1))[0]).should.equal(false);
+      ((await treeMap.ceilingEntry(maxKey + 1))[0]).should.equal(false);
+
+      // traverse through the tree
+      let found; let key; let value;
+
+      [found, key, value] = await treeMap.floorEntry(5);
+      found.should.equal(true);
+      key.should.be.bignumber.equals(5);
+      value.should.be.bignumber.equals(toValue(5));
+
+      [found, key, value] = await treeMap.floorEntry(6);
+      found.should.equal(true);
+      key.should.be.bignumber.equals(5);
+      value.should.be.bignumber.equals(toValue(5));
+
+      [found, key, value] = await treeMap.ceilingEntry(5);
+      found.should.equal(true);
+      key.should.be.bignumber.equals(5);
+      value.should.be.bignumber.equals(toValue(5));
+
+      [found, key, value] = await treeMap.ceilingEntry(6);
+      found.should.equal(true);
+      key.should.be.bignumber.equals(7);
+      value.should.be.bignumber.equals(toValue(7));
+    });
+
+    it('can find higher and lower entries', async () => {
+      // 1, 3, 5, ...
+      const index = keys.map((x, i) => (i * 2) + 1);
+      await treeMap.putAll(index, index.map(toValue));
+
+      const minKey = index[0];
+      const maxKey = index[index.length - 1];
+
+      // edge cases where key doesn't exist
+      ((await treeMap.lowerEntry(minKey))[0]).should.equal(false);
+      ((await treeMap.higherEntry(maxKey))[0]).should.equal(false);
+
+      // traverse through the tree
+      let found; let key; let value;
+
+      [found, key, value] = await treeMap.lowerEntry(4);
+      found.should.equal(true);
+      key.should.be.bignumber.equals(3);
+      value.should.be.bignumber.equals(toValue(3));
+
+      [found, key, value] = await treeMap.lowerEntry(5);
+      found.should.equal(true);
+      key.should.be.bignumber.equals(3);
+      value.should.be.bignumber.equals(toValue(3));
+
+      [found, key, value] = await treeMap.higherEntry(5);
+      found.should.equal(true);
+      key.should.be.bignumber.equals(7);
+      value.should.be.bignumber.equals(toValue(7));
+
+      [found, key, value] = await treeMap.higherEntry(6);
+      found.should.equal(true);
+      key.should.be.bignumber.equals(7);
+      value.should.be.bignumber.equals(toValue(7));
+    });
+
+    it('can find first and last entries', async () => {
+      let found; let key; let value;
+
+      // no entries yet
+      [found, key, value] = await treeMap.firstEntry();
+      found.should.equal(false);
+      [found, key, value] = await treeMap.lastEntry();
+      found.should.equal(false);
+
+
+      await treeMap.putAll(keys, keys.map(toValue));
+
+      [found, key, value] = await treeMap.firstEntry();
+      found.should.equal(true);
+      key.should.be.bignumber.equals(keys[0]);
+      value.should.be.bignumber.equals(toValue(keys[0]));
+
+      [found, key, value] = await treeMap.lastEntry();
+      found.should.equal(true);
+      key.should.be.bignumber.equals(keys[keys.length - 1]);
+      value.should.be.bignumber.equals(toValue(keys[keys.length - 1]));
+    });
+  });
 });

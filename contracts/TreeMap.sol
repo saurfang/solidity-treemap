@@ -498,7 +498,7 @@ library TreeMap {
                   //
                   //       1,R                                        3,R (current)
                   grandParent.links[parentDirection] = _rotateDouble(_self, parent, parentIdx, lastDirection);
-                } else if (_isChildRed(_self, sibling, 1 - lastDirection)) {
+                } else {
                   // single rotation
                   //           2,R(parent)                    1,R(newGrandParent/sibling)
                   //
@@ -556,19 +556,17 @@ library TreeMap {
   view
   returns(bool found, uint value)
   {
-    if (_self.rootIdx != 0) {
-      Entry storage current = _self.entries[_self.rootIdx];
+    Entry storage current = _self.entries[_self.rootIdx];
 
-      while (current.hasData) {
-        if (current.key == _key) {
-          found = true;
-          value = current.value;
-          break;
-        } else if (current.key < _key) {
-          current = _rightChild(_self, current);
-        } else {
-          current = _leftChild(_self, current);
-        }
+    while (current.hasData) {
+      if (current.key == _key) {
+        found = true;
+        value = current.value;
+        break;
+      } else if (current.key < _key) {
+        current = _rightChild(_self, current);
+      } else {
+        current = _leftChild(_self, current);
       }
     }
   }
@@ -596,24 +594,26 @@ library TreeMap {
   view
   returns(bool found, uint key, uint value)
   {
+    Entry storage candidate = _self.entries[0];
     Entry storage current = _self.entries[_self.rootIdx];
 
     while (current.hasData) {
       if (current.key == _key) {
-        found = true;
-        key = current.key;
-        value = current.value;
+        candidate = current;
         break;
       } else if (current.key > _key) {
         current = _leftChild(_self, current);
       } else {
         // NB: in iterations, we will only find greater keys than previously seen ones
-        found = true;
-        key = current.key;
-        value = current.value;
-
+        candidate = current;
         current = _rightChild(_self, current);
       }
+    }
+
+    if (candidate.hasData) {
+      found = true;
+      key = candidate.key;
+      value = candidate.value;
     }
   }
 
@@ -624,6 +624,7 @@ library TreeMap {
   view
   returns(bool found, uint key, uint value)
   {
+    Entry storage candidate = _self.entries[0];
     Entry storage current = _self.entries[_self.rootIdx];
 
     while (current.hasData) {
@@ -631,12 +632,15 @@ library TreeMap {
         current = _leftChild(_self, current);
       } else {
         // NB: in iterations, we will only find greater keys than previously seen ones
-        found = true;
-        key = current.key;
-        value = current.value;
-
+        candidate = current;
         current = _rightChild(_self, current);
       }
+    }
+
+    if (candidate.hasData) {
+      found = true;
+      key = candidate.key;
+      value = candidate.value;
     }
   }
 
@@ -647,24 +651,26 @@ library TreeMap {
   view
   returns(bool found, uint key, uint value)
   {
+    Entry storage candidate = _self.entries[0];
     Entry storage current = _self.entries[_self.rootIdx];
 
     while (current.hasData) {
       if (current.key == _key) {
-        found = true;
-        key = current.key;
-        value = current.value;
+        candidate = current;
         break;
       } else if (current.key < _key) {
         current = _rightChild(_self, current);
       } else {
         // NB: in iterations, we will only find lesser keys than previously seen ones
-        found = true;
-        key = current.key;
-        value = current.value;
-
+        candidate = current;
         current = _leftChild(_self, current);
       }
+    }
+
+    if (candidate.hasData) {
+      found = true;
+      key = candidate.key;
+      value = candidate.value;
     }
   }
 
@@ -675,67 +681,66 @@ library TreeMap {
   view
   returns(bool found, uint key, uint value)
   {
+    Entry storage candidate = _self.entries[0];
     Entry storage current = _self.entries[_self.rootIdx];
 
     while (current.hasData) {
       if (current.key <= _key) {
         current = _rightChild(_self, current);
       } else {
-        // NB: in iterations, we will only find lesser keys than previously seen ones
-        found = true;
-        key = current.key;
-        value = current.value;
-
+        candidate = current;
         current = _leftChild(_self, current);
       }
     }
+
+    if (candidate.hasData) {
+      found = true;
+      key = candidate.key;
+      value = candidate.value;
+    }
   }
 
-  /// @dev helper function that validate tree integrity: binary search tree and red/black violation.
-  ///  function is implemented recursively and should not be used in production contract code.
-  ///  Binary search tree: left child < root < right child
-  ///  Red violation: red node cannot have red child
-  ///  Black violation: each side of a node (path from root to all leaves) must have equal black tree height
-  /// @return red-black tree height (number of black nodes from root to each leaf)
-  function _assert(Data storage _self, Entry storage _root)
+  /// @notice returns the entry associated with the lowest key
+  /// @return whether such entry exists and its key and value
+  function firstEntry(Data storage _self)
   internal
   view
-  returns(uint height)
+  returns(bool found, uint key, uint value)
   {
-    uint leftHeight = 0;
-    uint rightHeight = 0;
+    Entry storage previous = _self.entries[_self.rootIdx];
+    Entry storage current = _leftChild(_self, previous);
 
-    if (!_root.hasData) {
-      return 0;
-    } else {
-      Entry storage leftChild = _leftChild(_self, _root);
-      Entry storage rightChild = _rightChild(_self, _root);
+    while (current.hasData) {
+      previous = current;
+      current = _leftChild(_self, current);
+    }
 
-      if (_isRed(_root)) {
-        if (_isRed(leftChild) || _isRed(rightChild)) {
-          revert("Red violation: red entry cannot have red child");
-        }
-      }
+    if (previous.hasData) {
+      found = true;
+      key = previous.key;
+      value = previous.value;
+    }
+  }
 
-      leftHeight = _assert(_self, leftChild);
-      rightHeight = _assert(_self, rightChild);
+  /// @notice returns the entry associated with the highest key
+  /// @return whether such entry exists and its key and value
+  function lastEntry(Data storage _self)
+  internal
+  view
+  returns(bool found, uint key, uint value)
+  {
+    Entry storage previous = _self.entries[_self.rootIdx];
+    Entry storage current = _rightChild(_self, previous);
 
-      if (
-        (leftChild.hasData && leftChild.key >= _root.key) ||
-        (rightChild.hasData && rightChild.key <= _root.key)
-      ) {
-        revert("Binary search tree violation: left child < entry < right child does not hold");
-      }
+    while (current.hasData) {
+      previous = current;
+      current = _rightChild(_self, current);
+    }
 
-      if (leftHeight != 0 && rightHeight != 0) {
-        if (leftHeight != rightHeight) {
-          revert("Black violation: left side black tree height must equal to right side black tree height");
-        }
-
-        return _isRed(_root) ? leftHeight : leftHeight + 1;
-      }
-
-      return 0;
+    if (previous.hasData) {
+      found = true;
+      key = previous.key;
+      value = previous.value;
     }
   }
 }

@@ -2,10 +2,12 @@ pragma solidity ^0.4.23;
 
 
 import "../../contracts/TreeMap.sol";
+import "../../contracts/mocks/TreeMapTest.sol";
 
 
 contract TreeMapMock {
   using TreeMap for TreeMap.Data;
+  using TreeMapTest for TreeMap.Data;
 
   TreeMap.Data sortedMap;
 
@@ -120,6 +122,54 @@ contract TreeMapMock {
     for (uint i = 0; i < keys.length; i++) {
       (removed[i], oldValues[i]) = remove(keys[i]);
     }
+  }
+
+  function floorEntry(uint _key)
+  public
+  view
+  returns(bool found, uint key, uint value)
+  {
+    return sortedMap.floorEntry(_key);
+  }
+
+  function ceilingEntry(uint _key)
+  public
+  view
+  returns(bool found, uint key, uint value)
+  {
+    return sortedMap.ceilingEntry(_key);
+  }
+
+  function higherEntry(uint _key)
+  public
+  view
+  returns(bool found, uint key, uint value)
+  {
+    return sortedMap.higherEntry(_key);
+  }
+
+  function lowerEntry(uint _key)
+  public
+  view
+  returns(bool found, uint key, uint value)
+  {
+    return sortedMap.lowerEntry(_key);
+  }
+
+  function firstEntry()
+  public
+  view
+  returns(bool found, uint key, uint value)
+  {
+    return sortedMap.firstEntry();
+  }
+
+  function lastEntry()
+  public
+  view
+  returns(bool found, uint key, uint value)
+  {
+    return sortedMap.lastEntry();
   }
 
   function isValid()
