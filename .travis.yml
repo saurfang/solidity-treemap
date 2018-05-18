@@ -2,10 +2,9 @@ dist: trusty
 language: node_js
 node_js:
   - "8"
-before_script:
-  - truffle version
 cache:
-  yarn: true
+  directories:
+    - node_modules
 env:
   -
   - SOLIDITY_COVERAGE=true
@@ -13,6 +12,9 @@ matrix:
   fast_finish: true
   allow_failures:
     - env: SOLIDITY_COVERAGE=true
+before_script:
+  - truffle version
 script:
-  - yarn lint:all
-  - yarn test
+  - npm run lint
+  - npm run lint:sol
+  - npm run test

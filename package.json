@@ -11,7 +11,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "./node_modules/.bin/truffle test",
+    "test": "./scripts/test.sh",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "lint:sol": "solium -d .",

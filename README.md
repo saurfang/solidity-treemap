@@ -8,8 +8,6 @@ A work in progress treemap implementation using red-black tree.
 
 ## TODO
 
-- [ ] Increase test coverage
-  - [ ] Test revert cases
 - [ ] Refactor library into smaller modules. For example, seperate red-black tree and search/zipper code
 - [ ] Expand function interface
   - [ ] Enable in-order [iteration](https://github.com/ethereum/dapp-bin/blob/master/library/iterable_mapping.sol) over entries
