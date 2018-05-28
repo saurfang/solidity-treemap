@@ -1,5 +1,6 @@
-require("source-map-support").install();
-require('babel-register');
+require('babel-register')({
+  ignore: /node_modules\/(?!openzeppelin-solidity)/
+});
 require('babel-polyfill');
 
 module.exports = {
@@ -22,4 +23,10 @@ module.exports = {
       network_id: '*', // eslint-disable-line camelcase
     },
   },
+  solc: {
+    optimizer: {
+      enabled: true,
+      runs: 500
+    },
+  }
 };

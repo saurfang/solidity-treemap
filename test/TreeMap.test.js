@@ -1,4 +1,6 @@
-import { shuffle, alternatingOutsideInOrder } from './utils';
+
+// eslint-disable-next-line
+import { shuffle, alternatingOutsideInOrder, printMap } from './utils';
 
 const { BigNumber } = web3;
 const TreeMapMock = artifacts.require('TreeMapMock');
@@ -87,6 +89,12 @@ contract('TreeMapMock', () => {
       const [, newValue] = await treeMap.get(10);
       newValue.should.be.bignumber.equal(101, 'did not replace');
     });
+
+    it('returns the correct tree height', async () => {
+      await treeMap.putAll(keys, keys.map(toValue));
+      (await treeMap.size()).should.be.bignumber.equal(keys.length);
+      (await treeMap.blackHeight()).should.be.bignumber.equal((await treeMap.checkHeight()));
+    });
   });
 
   describe('insertions should work with', () => {
@@ -96,9 +104,7 @@ contract('TreeMapMock', () => {
       const [found, results] = await treeMap.getAll(keys);
 
       found.forEach(i => i.should.equal(true));
-      results.forEach((v, k) => v.should.be.bignumber.equal(toValue(k)));
-
-      await treeMap.isValid();
+      results.forEach((v, k) => v.should.be.bignumber.equal(toValue(keys[k])));
     }
 
     it('elements in sorted order', async () => {
@@ -106,8 +112,7 @@ contract('TreeMapMock', () => {
     });
 
     it('elements in reverse sorted order', async () => {
-      const input = keys.slice(0).reverse();
-      await assertInsertions(input);
+      await assertInsertions(keys.slice(0).reverse());
     });
 
     it('elements in alternating outside-in order', async () => {
@@ -117,14 +122,16 @@ contract('TreeMapMock', () => {
 
     it('elements in any order', async () => {
       const input = shuffle(keys.slice(0));
+      // eslint-disable-next-line
+      console.log(input);
       await assertInsertions(input);
     });
   });
 
   describe('delete should work with', () => {
     async function assertDeletion(input) {
-      const index = input.map((_x, i) => i);
-      await treeMap.putAll(index, index.map(toValue));
+      const insertionInput = shuffle(input.slice(0));
+      await treeMap.putAll(insertionInput, insertionInput.map(toValue));
 
       const [removed, values] = await treeMap.removeAll.call(input);
 
@@ -132,7 +139,6 @@ contract('TreeMapMock', () => {
       values.forEach((v, i) => v.should.be.bignumber.equal(toValue(input[i])));
 
       await treeMap.removeAll(input);
-      await treeMap.isValid();
 
       (await treeMap.isEmpty()).should.equal(true, 'tree should be empty');
 
@@ -155,13 +161,15 @@ contract('TreeMapMock', () => {
 
     it('elements in any order', async () => {
       const input = shuffle(keys.slice(0));
+      // eslint-disable-next-line
+      console.log(input);
       await assertDeletion(input);
     });
 
-    // it('in specific order', async () => {
+    // it.only('in specific order', async () => {
     //   await treeMap.putAll(keys, keys.map(toValue));
 
-    //   const input = [2, 0, 4, 5, 7, 3, 6, 1];
+    //   const input = [1, 3, 5, 6, 4, 0, 2, 7];
     //   for (let i = 0; i < input.length; i += 1) {
     //     const k = input[i];
     //     const [removed, value] = await treeMap.remove.call(k);
@@ -171,7 +179,7 @@ contract('TreeMapMock', () => {
     //     await treeMap.remove(k);
 
     //     console.log(await printMap(treeMap));
-    //     await treeMap.isValid();
+    //     await treeMap.checkHeight();
     //     console.log(`removed ${k}`);
     //   }
     // });
@@ -271,6 +279,40 @@ contract('TreeMapMock', () => {
       found.should.equal(true);
       key.should.be.bignumber.equals(keys[keys.length - 1]);
       value.should.be.bignumber.equals(toValue(keys[keys.length - 1]));
+    });
+  });
+
+  describe('order static map', () => {
+    it('can select entries by index', async () => {
+      await treeMap.putAll(keys, keys.map(toValue));
+
+      let found; let key; let value;
+      [found, key, value] = await treeMap.selectAll(keys.map((x, i) => i));
+      found.forEach(i => i.should.equal(true));
+      key.forEach((v, k) => v.should.be.bignumber.equal(keys[k]));
+      value.forEach((v, k) => v.should.be.bignumber.equal(toValue(keys[k])));
+
+      // return not found for index out of bound
+      [found, key, value] = await treeMap.select(keys.length);
+      found.should.equal(false);
+    });
+
+    it('can rank entries', async () => {
+      const input = keys.map(i => (2 * i) + 1);
+      await treeMap.putAll(input, input.map(toValue));
+
+      const testInput = [];
+      for (let i = 0; i <= keys.length * 2; i += 1) {
+        testInput.push(i);
+      }
+
+      const [found, indices] = await treeMap.rankAll(testInput);
+
+      for (let i = 0; i < testInput.length; i += 1) {
+        found[i].should.equal(i % 2 === 1);
+
+        indices[i].should.be.bignumber.equal(Math.floor(i / 2));
+      }
     });
   });
 });

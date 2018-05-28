@@ -1,5 +1,6 @@
 pragma solidity ^0.4.23;
 
+import "./MathUtil.sol";
 
 /// @title A navigatable sorted map that supports insertion, deletion, single item lookup,
 ///  and range lookup in logarithmic runtime.
@@ -21,14 +22,14 @@ library TreeMap {
   uint8 private constant RIGHT = 1;
 
   /// @dev a struct that represents a node in the red-black tree. `links` connect to its left and right child.
-  ///  each node is `color`ed either RED or BLACK. `hasData` is used to indicate if the entry is NULL and
-  ///  should never be modified by the user directly.
+  ///  each node is `color`ed either RED or BLACK. `size` annotates the number of entries the node and its children
+  ///  have.
   struct Entry {
     uint key;
     uint value;
     uint[2] links;
+    uint size;
     bool color;
-    bool hasData;
   }
 
   /// @dev a struct that encapsulates all state variables of the treemap.
@@ -40,15 +41,13 @@ library TreeMap {
   ///  `entries` array is 1-index based.
   ///
   ///  rootIdx simply points to the root node. When unitialized, it evalutes to 0 and points the "false root node".
-  struct Data {
+  struct Map {
     // mapping from storage index to entries
     // 0 is reserved as "NULL" entry should never be used as index for entry that contains data
     mapping(uint => Entry) entries;
     uint entriesLength;
     // index of the root entry
     uint rootIdx;
-    // number of key-value mappings stored in the map
-    uint size;
   }
 
   /// @dev check whether a entry is not NULL and its color is RED
@@ -57,11 +56,11 @@ library TreeMap {
   view
   returns(bool)
   {
-    return _entry.hasData && _entry.color == RED;
+    return _entry.size > 0 && _entry.color == RED;
   }
 
   /// @dev returns an entry's child in a direction
-  function _child(Data storage _self, Entry storage _entry, uint8 _direction)
+  function _child(Map storage _self, Entry storage _entry, uint8 _direction)
   internal
   view
   returns(Entry storage child)
@@ -70,7 +69,7 @@ library TreeMap {
   }
 
   /// @dev returns an entry's left child
-  function _leftChild(Data storage _self, Entry storage _entry)
+  function _leftChild(Map storage _self, Entry storage _entry)
   internal
   view
   returns(Entry storage leftChild)
@@ -79,7 +78,7 @@ library TreeMap {
   }
 
   /// @dev returns an entry's right child
-  function _rightChild(Data storage _self, Entry storage _entry)
+  function _rightChild(Map storage _self, Entry storage _entry)
   internal
   view
   returns(Entry storage rightChild)
@@ -88,7 +87,7 @@ library TreeMap {
   }
 
   /// @dev check whether a entry's child is not NULL and its color is RED
-  function _isChildRed(Data storage _self, Entry storage _entry, uint8 _direction)
+  function _isChildRed(Map storage _self, Entry storage _entry, uint8 _direction)
   internal
   view
   returns(bool)
@@ -100,7 +99,7 @@ library TreeMap {
   /// @param _key key with which the specified value is to be associated
   /// @param _value value to be associated with the specified key
   /// @return (index of the newly created entry, its storage pointer)
-  function _makeEntry(Data storage _self, uint _key, uint _value)
+  function _makeEntry(Map storage _self, uint _key, uint _value)
   internal
   returns(uint index, Entry storage entry)
   {
@@ -114,13 +113,11 @@ library TreeMap {
       _key,
       _value,
       [uint(0), uint(0)],
-      RED,
-      true
+      1,
+      RED
     );
 
     entry = _self.entries[index];
-
-    _self.size++;
   }
 
   /// @dev single tree rotation around a root node in a specified direction.
@@ -145,7 +142,7 @@ library TreeMap {
   /// @param _rootIdx entry index of the root node
   /// @param _direction rotation direction
   /// @return entry index of the new root node
-  function _rotateSingle(Data storage _self, Entry storage _root, uint _rootIdx, uint8 _direction)
+  function _rotateSingle(Map storage _self, Entry storage _root, uint _rootIdx, uint8 _direction)
   internal
   returns(uint newRootIdx)
   {
@@ -161,6 +158,13 @@ library TreeMap {
     // apply colors
     _root.color = RED;
     newRoot.color = BLACK;
+
+    // recalculate size
+    // TODO: double check if these are required
+    require (newRootIdx > 0) ;
+    newRoot.size = _root.size;
+    require (_rootIdx > 0) ;
+    _root.size = _leftChild(_self, _root).size + _rightChild(_self, _root).size + 1;
   }
 
   /// @dev apply tree rotation around a root node in a specified direction twice.
@@ -170,7 +174,7 @@ library TreeMap {
   /// @param _rootIdx entry index of the root node
   /// @param _direction rotation direction
   /// @return entry index of the new root node
-  function _rotateDouble(Data storage _self, Entry storage _root, uint _rootIdx, uint8 _direction)
+  function _rotateDouble(Map storage _self, Entry storage _root, uint _rootIdx, uint8 _direction)
   internal
   returns(uint newRootIdx)
   {
@@ -186,9 +190,30 @@ library TreeMap {
     return _rotateSingle(_self, _root, _rootIdx, _direction);
   }
 
+  /// @dev increment tree size when new entry is added in `probe`.
+  function _incrementTreeSize(Map storage _self, uint _key)
+  internal
+  {
+    uint rootIdx = _self.entries[0].links[RIGHT];
+    Entry storage current = _self.entries[rootIdx];
+    if (rootIdx == 0 || current.size == 0) {
+      revert("increment should not be called on an empty tree");
+    }
+
+    while (current.key != _key) {
+      current.size++;
+
+      if (current.key < _key) {
+        current = _rightChild(_self, current);
+      } else {
+        current = _leftChild(_self, current);
+      }
+    }
+  }
+
   /// @dev set root node to BLACK color
   ///  factored out to avoid `CompilerError: Stack too deep, try removing local variables.`
-  function _setRootToBlack(Data storage _self)
+  function _setRootToBlack(Map storage _self)
   internal
   {
     _self.entries[_self.rootIdx].color = BLACK;
@@ -196,7 +221,7 @@ library TreeMap {
 
   /// @dev flip color if applicable during probe()
   ///  factored out to avoid `CompilerError: Stack too deep, try removing local variables.`
-  function _flipColorInProbe(Data storage _self, Entry storage _current)
+  function _flipColorInProbe(Map storage _self, Entry storage _current)
   internal
   {
     Entry storage left = _leftChild(_self, _current);
@@ -228,7 +253,7 @@ library TreeMap {
   /// @param _key key with which the specified value is to be associated
   /// @param _value value to be associated with the specified key
   /// @return storage pointer to entry corresponding to the key
-  function probe(Data storage _self, uint _key, uint _value)
+  function probe(Map storage _self, uint _key, uint _value)
   internal
   returns(Entry storage entry)
   {
@@ -258,12 +283,12 @@ library TreeMap {
 
       // search down the tree
       while (true) {
-        if (!current.hasData) {
+        if (current.size == 0) {
           // insert new node at the bottom
-          (currentIdx, current) = _makeEntry(_self, _key,_value);
+          (currentIdx, current) = _makeEntry(_self, _key, _value);
           previous.links[direction] = currentIdx;
-          // save inserted element
-          entry = current;
+          // increment all parent entry size
+          _incrementTreeSize(_self, _key);
         } else {
           _flipColorInProbe(_self, current);
         }
@@ -303,6 +328,7 @@ library TreeMap {
             //      /     \
             //
             //  1,B         3,B
+            // unapply optimistic size change
             grandParent.links[parentDirection] = _rotateDouble(_self, parent, parentIdx, 1 - lastDirection);
             // fix previous tracking
             // NB: current will traverse without color flip till children of 0 or 4,
@@ -336,6 +362,7 @@ library TreeMap {
 
       // update root
       _self.rootIdx = _self.entries[0].links[RIGHT];
+      _self.entries[0].links[RIGHT] = 0;
     }
 
     // reset root node to BLACK
@@ -347,7 +374,7 @@ library TreeMap {
   /// @param _key key with which the specified value is to be associated
   /// @param _value value to be associated with the specified key
   /// @return value associated with the specified key
-  function putIfAbsent(Data storage _self, uint _key, uint _value)
+  function putIfAbsent(Map storage _self, uint _key, uint _value)
   internal
   returns(uint value)
   {
@@ -360,7 +387,7 @@ library TreeMap {
   /// @param _key key with which the specified value is to be associated
   /// @param _value value to be associated with the specified key
   /// @return (wether value is replaced, value associated with the key before replacement)
-  function put(Data storage _self, uint _key, uint _value)
+  function put(Map storage _self, uint _key, uint _value)
   internal
   returns(bool replaced, uint oldValue)
   {
@@ -375,7 +402,7 @@ library TreeMap {
   /// @dev apply colors as necessary after rotation in top-down deletion
   ///  factored out to avoid `CompilerError: Stack too deep, try removing local variables.`
   function _applyColorInRemove(
-    Data storage _self,
+    Map storage _self,
     Entry storage _current,
     Entry storage _grandParent,
     uint8 _parentDirection
@@ -387,6 +414,27 @@ library TreeMap {
     newGrandParent.color = RED;
     _leftChild(_self, newGrandParent).color = BLACK;
     _rightChild(_self, newGrandParent).color = BLACK;
+  }
+
+  /// @dev decrement tree size when entry is removed in `remove`.
+  function _decrementTreeSize(Map storage _self, uint _key)
+  internal
+  {
+    uint rootIdx = _self.entries[0].links[RIGHT];
+    Entry storage current = _self.entries[rootIdx];
+    if (rootIdx == 0 || current.size == 0) {
+      revert("decrement should not be called on an empty tree");
+    }
+
+    while (current.key != _key) {
+      current.size--;
+
+      if (current.key < _key) {
+        current = _rightChild(_self, current);
+      } else {
+        current = _leftChild(_self, current);
+      }
+    }
   }
 
   /// @notice remove mapping associated with `key` from the map if it is present and returns old `value`
@@ -407,7 +455,7 @@ library TreeMap {
   ///  The rest of the search always traverse down to the right direction.
   /// @param _key key whose mapping is to be removed
   /// @return (whether a mapping has been removed, the value associated with the `key` before removal)
-  function remove(Data storage _self, uint _key)
+  function remove(Map storage _self, uint _key)
   internal
   returns(bool removed, uint oldValue)
   {
@@ -470,7 +518,7 @@ library TreeMap {
             // and we will terminate at next iteration
             // NB: this normally can't happen because current can't be BLACK if it doesn't have sibling
             // it would be a black violation. it can only happen if current is a BLACK root without children
-            if (sibling.hasData) {
+            if (sibling.size > 0) {
               // if both sibling's children are black, color flip does not lead to a red violation on sibling
               if (!_isChildRed(_self, sibling, LEFT) && !_isChildRed(_self, sibling, RIGHT)) {
                 // color flip
@@ -521,10 +569,13 @@ library TreeMap {
       }
 
       // replace and remove if found
-      if (toReplace.hasData) {
+      if (toReplace.size > 0) {
         // save old value
         removed = true;
         oldValue = toReplace.value;
+
+        // reset tree size along the path
+        _decrementTreeSize(_self, current.key);
 
         // replace old node with current iterator
         toReplace.key = current.key;
@@ -533,17 +584,13 @@ library TreeMap {
         // splice remaining subtree of current node to its parent if applicable
         // NB: current.links[direction] has been checked to be empty
         parent.links[lastDirection] = current.links[1 - direction];
-        // clean up parent connection to current node
-        // parent.links[1 - lastDirection] = 0;
-
         // delete current node to free storage
         delete _self.entries[currentIdx];
-
-        _self.size--;
       }
 
       // update root and make it black
       _self.rootIdx = _self.entries[0].links[RIGHT];
+      _self.entries[0].links[RIGHT] = 0;
       _setRootToBlack(_self);
     }
   }
@@ -551,14 +598,14 @@ library TreeMap {
   /// @notice find the value to which the `key` is associated, or not found if the map does not contain such mapping
   /// @param _key key whose associated value is to be returned
   /// @return (whether a mapping with `key` exists, the value associated with the `key`)
-  function get(Data storage _self, uint _key)
+  function get(Map storage _self, uint _key)
   internal
   view
   returns(bool found, uint value)
   {
     Entry storage current = _self.entries[_self.rootIdx];
 
-    while (current.hasData) {
+    while (current.size > 0) {
       if (current.key == _key) {
         found = true;
         value = current.value;
@@ -575,7 +622,7 @@ library TreeMap {
   /// @param _key key whose associated value is to be returned
   /// @param _defaultValue fallback value to be returned
   /// @return the value associated with the `key` or `defaultValue` if not found
-  function getOrDefault(Data storage _self, uint _key, uint _defaultValue)
+  function getOrDefault(Map storage _self, uint _key, uint _defaultValue)
   internal
   view
   returns(uint value)
@@ -587,9 +634,42 @@ library TreeMap {
     }
   }
 
+  /// @notice returns the size of the tree
+  /// @dev O(1)
+  function size(Map storage _self)
+  internal
+  view
+  returns(uint)
+  {
+    return _self.entries[_self.rootIdx].size;
+  }
+
+  /// @notice returns the black height of the tree: the uniform number of
+  ///  black nodes in all paths from root to the leaves.
+  /// @dev this is useful to determine the size of stack to allocate for
+  ///  iterators implemented in contract since memory array cannot be resized
+  ///  NB: RBT guarantees the path from the root to the farthest leaf is no more
+  ///  than twice as long as the path from the root to the nearest leaf.
+  ///  O(log n)
+  function blackHeight(Map storage _self)
+  internal
+  view
+  returns(uint height)
+  {
+    Entry storage current = _self.entries[_self.rootIdx];
+
+    while (current.size > 0) {
+      if (current.color == BLACK) {
+        height++;
+      }
+      current = _leftChild(_self, current);
+    }
+  }
+
   /// @notice returns an entry associated with the greatest key less than or equal to the given key
+  /// @dev O(log n)
   /// @return whether such entry exists and its key and value
-  function floorEntry(Data storage _self, uint _key)
+  function floorEntry(Map storage _self, uint _key)
   internal
   view
   returns(bool found, uint key, uint value)
@@ -597,7 +677,7 @@ library TreeMap {
     Entry storage candidate = _self.entries[0];
     Entry storage current = _self.entries[_self.rootIdx];
 
-    while (current.hasData) {
+    while (current.size > 0) {
       if (current.key == _key) {
         candidate = current;
         break;
@@ -610,7 +690,7 @@ library TreeMap {
       }
     }
 
-    if (candidate.hasData) {
+    if (candidate.size > 0) {
       found = true;
       key = candidate.key;
       value = candidate.value;
@@ -618,8 +698,9 @@ library TreeMap {
   }
 
   /// @notice returns an entry associated with the greatest key less than the given key
+  /// @dev O(log n)
   /// @return whether such entry exists and its key and value
-  function lowerEntry(Data storage _self, uint _key)
+  function lowerEntry(Map storage _self, uint _key)
   internal
   view
   returns(bool found, uint key, uint value)
@@ -627,7 +708,7 @@ library TreeMap {
     Entry storage candidate = _self.entries[0];
     Entry storage current = _self.entries[_self.rootIdx];
 
-    while (current.hasData) {
+    while (current.size > 0) {
       if (current.key >= _key) {
         current = _leftChild(_self, current);
       } else {
@@ -637,7 +718,7 @@ library TreeMap {
       }
     }
 
-    if (candidate.hasData) {
+    if (candidate.size > 0) {
       found = true;
       key = candidate.key;
       value = candidate.value;
@@ -645,8 +726,9 @@ library TreeMap {
   }
 
   /// @notice returns an entry associated with the least key greater than or equal to the given key
+  /// @dev O(log n)
   /// @return whether such entry exists and its key and value
-  function ceilingEntry(Data storage _self, uint _key)
+  function ceilingEntry(Map storage _self, uint _key)
   internal
   view
   returns(bool found, uint key, uint value)
@@ -654,7 +736,7 @@ library TreeMap {
     Entry storage candidate = _self.entries[0];
     Entry storage current = _self.entries[_self.rootIdx];
 
-    while (current.hasData) {
+    while (current.size > 0) {
       if (current.key == _key) {
         candidate = current;
         break;
@@ -667,7 +749,7 @@ library TreeMap {
       }
     }
 
-    if (candidate.hasData) {
+    if (candidate.size > 0) {
       found = true;
       key = candidate.key;
       value = candidate.value;
@@ -675,8 +757,9 @@ library TreeMap {
   }
 
   /// @notice returns an entry associated with the least key greater than the given key
+  /// @dev O(log n)
   /// @return whether such entry exists and its key and value
-  function higherEntry(Data storage _self, uint _key)
+  function higherEntry(Map storage _self, uint _key)
   internal
   view
   returns(bool found, uint key, uint value)
@@ -684,7 +767,7 @@ library TreeMap {
     Entry storage candidate = _self.entries[0];
     Entry storage current = _self.entries[_self.rootIdx];
 
-    while (current.hasData) {
+    while (current.size > 0) {
       if (current.key <= _key) {
         current = _rightChild(_self, current);
       } else {
@@ -693,7 +776,7 @@ library TreeMap {
       }
     }
 
-    if (candidate.hasData) {
+    if (candidate.size > 0) {
       found = true;
       key = candidate.key;
       value = candidate.value;
@@ -701,8 +784,9 @@ library TreeMap {
   }
 
   /// @notice returns the entry associated with the lowest key
+  /// @dev O(log n)
   /// @return whether such entry exists and its key and value
-  function firstEntry(Data storage _self)
+  function firstEntry(Map storage _self)
   internal
   view
   returns(bool found, uint key, uint value)
@@ -710,12 +794,12 @@ library TreeMap {
     Entry storage previous = _self.entries[_self.rootIdx];
     Entry storage current = _leftChild(_self, previous);
 
-    while (current.hasData) {
+    while (current.size > 0) {
       previous = current;
       current = _leftChild(_self, current);
     }
 
-    if (previous.hasData) {
+    if (previous.size > 0) {
       found = true;
       key = previous.key;
       value = previous.value;
@@ -723,8 +807,9 @@ library TreeMap {
   }
 
   /// @notice returns the entry associated with the highest key
+  /// @dev O(log n)
   /// @return whether such entry exists and its key and value
-  function lastEntry(Data storage _self)
+  function lastEntry(Map storage _self)
   internal
   view
   returns(bool found, uint key, uint value)
@@ -732,15 +817,61 @@ library TreeMap {
     Entry storage previous = _self.entries[_self.rootIdx];
     Entry storage current = _rightChild(_self, previous);
 
-    while (current.hasData) {
+    while (current.size > 0) {
       previous = current;
       current = _rightChild(_self, current);
     }
 
-    if (previous.hasData) {
+    if (previous.size > 0) {
       found = true;
       key = previous.key;
       value = previous.value;
+    }
+  }
+
+  /// @notice find the i'th smallest element stored in the tree
+  function select(Map storage _self, uint _i)
+  internal
+  view
+  returns(bool found, uint key, uint value)
+  {
+    uint i = _i;
+    Entry storage current = _self.entries[_self.rootIdx];
+    Entry storage leftChild = _leftChild(_self, current);
+    while (current.size > i) {
+      if (leftChild.size == i) {
+        return (true, current.key, current.value);
+      } else if (i < leftChild.size) {
+        current = leftChild;
+      } else {
+        current = _rightChild(_self, current);
+        i -= leftChild.size + 1;
+      }
+
+      leftChild = _leftChild(_self, current);
+    }
+  }
+
+  /// @notice find the rank of element x in the tree,
+  ///  i.e. its index in the sorted list of elements of the tree
+  /// @return whether `_key` already existed in the map and its index (or insertion index if not found)
+  function rank(Map storage _self, uint _key)
+  internal
+  view
+  returns(bool found, uint index)
+  {
+    Entry storage current = _self.entries[_self.rootIdx];
+    while(current.size > 0) {
+      if (current.key == _key) {
+        index += _leftChild(_self, current).size;
+        found = true;
+        break;
+      } else if (current.key < _key) {
+        index += _leftChild(_self, current).size + 1;
+        current = _rightChild(_self, current);
+      } else {
+        current = _leftChild(_self, current);
+      }
     }
   }
 }

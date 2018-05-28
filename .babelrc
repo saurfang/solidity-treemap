@@ -1,5 +1,3 @@
 {
-  "presets": ["env"],
-  "sourceMaps": "inline",
-  "retainLines": true
+  "presets": ["env"]
 }

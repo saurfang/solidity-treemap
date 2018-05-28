@@ -65,3 +65,6 @@ typings/
 
 # truffle build directory
 build/
+
+.DS_Store
+.test/

@@ -6,17 +6,17 @@ import "../../contracts/mocks/TreeMapTest.sol";
 
 
 contract TreeMapMock {
-  using TreeMap for TreeMap.Data;
-  using TreeMapTest for TreeMap.Data;
+  using TreeMap for TreeMap.Map;
+  using TreeMapTest for TreeMap.Map;
 
-  TreeMap.Data sortedMap;
+  TreeMap.Map sortedMap;
 
   function size()
   public
   view
   returns(uint)
   {
-    return sortedMap.size;
+    return sortedMap.size();
   }
 
   function isEmpty()
@@ -30,24 +30,24 @@ contract TreeMapMock {
   function entries()
   public
   view
-  returns(uint rootIdx, uint[] keys, uint[] values, uint[] left, uint[] right, bool[] color, bool[] hasData)
+  returns(uint rootIdx, uint[] keys, uint[] values, uint[] lefts, uint[] rights, bool[] colors, uint[] sizes)
   {
     rootIdx = sortedMap.rootIdx;
     keys = new uint[](sortedMap.entriesLength + 1);
     values = new uint[](sortedMap.entriesLength + 1);
-    left = new uint[](sortedMap.entriesLength + 1);
-    right = new uint[](sortedMap.entriesLength + 1);
-    color = new bool[](sortedMap.entriesLength + 1);
-    hasData = new bool[](sortedMap.entriesLength + 1);
+    lefts = new uint[](sortedMap.entriesLength + 1);
+    rights = new uint[](sortedMap.entriesLength + 1);
+    colors = new bool[](sortedMap.entriesLength + 1);
+    sizes = new uint[](sortedMap.entriesLength + 1);
 
     for (uint i = 0; i <= sortedMap.entriesLength; i++) {
       TreeMap.Entry storage entry = sortedMap.entries[i];
       keys[i] = entry.key;
       values[i] = entry.value;
-      left[i] = entry.links[0];
-      right[i] = entry.links[1];
-      color[i] = entry.color;
-      hasData[i] = entry.hasData;
+      lefts[i] = entry.links[0];
+      rights[i] = entry.links[1];
+      colors[i] = entry.color;
+      sizes[i] = entry.size;
     }
   }
 
@@ -83,14 +83,16 @@ contract TreeMapMock {
   public
   returns(uint newValue)
   {
-    return sortedMap.putIfAbsent(key, value);
+    newValue = sortedMap.putIfAbsent(key, value);
+    checkHeight();
   }
 
   function put(uint key, uint value)
   public
   returns(bool replaced, uint oldValue)
   {
-    return sortedMap.put(key, value);
+    (replaced, oldValue) = sortedMap.put(key, value);
+    checkHeight();
   }
 
   function putAll(uint[] keys, uint[] values)
@@ -110,6 +112,7 @@ contract TreeMapMock {
   returns(bool removed, uint oldValue)
   {
     (removed, oldValue) = sortedMap.remove(key);
+    // checkHeight();
   }
 
   function removeAll(uint[] keys)
@@ -172,12 +175,62 @@ contract TreeMapMock {
     return sortedMap.lastEntry();
   }
 
-  function isValid()
+  function checkHeight()
   public
   view
-  returns(bool)
+  returns(uint)
   {
-    sortedMap._assert(sortedMap.entries[sortedMap.rootIdx]);
-    return true;
+    return sortedMap.checkHeight(sortedMap.entries[sortedMap.rootIdx]);
+  }
+
+  function blackHeight()
+  public
+  view
+  returns(uint)
+  {
+    return sortedMap.blackHeight();
+  }
+
+  function select(uint i)
+  public
+  view
+  returns(bool found, uint key, uint value)
+  {
+    return sortedMap.select(i);
+  }
+
+  function selectAll(uint[] indices)
+  public
+  view
+  returns(bool[] found, uint[] keys, uint[] values)
+  {
+    found = new bool[](indices.length);
+    keys = new uint[](indices.length);
+    values = new uint[](indices.length);
+
+    for (uint i = 0; i < indices.length; i++) {
+      (found[i], keys[i], values[i]) = select(indices[i]);
+    }
+  }
+
+  function rank(uint key)
+  public
+  view
+  returns(bool found, uint index)
+  {
+    return sortedMap.rank(key);
+  }
+
+  function rankAll(uint[] keys)
+  public
+  view
+  returns(bool[] found, uint[] indices)
+  {
+    found = new bool[](keys.length);
+    indices = new uint[](keys.length);
+
+    for (uint i = 0; i < keys.length; i++) {
+      (found[i], indices[i]) = rank(keys[i]);
+    }
   }
 }
