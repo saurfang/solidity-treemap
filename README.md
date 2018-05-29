@@ -11,7 +11,6 @@ A work in progress treemap implementation using red-black tree.
 - [ ] Refactor library into smaller modules. For example, seperate red-black tree and search/zipper code
 - [ ] Expand function interface
   - [ ] Enable in-order [iteration](https://github.com/ethereum/dapp-bin/blob/master/library/iterable_mapping.sol) over entries
-  - [ ] Implement [Order statistic tree](https://en.wikipedia.org/wiki/Order_statistic_tree)
   - [ ] Complete implementation of all NavigableMap interface
 - [ ] Implement more efficient [bulk operations](https://en.wikipedia.org/wiki/Red%E2%80%93black_tree#Set_operations_and_bulk_operations)
 

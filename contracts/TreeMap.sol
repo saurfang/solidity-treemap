@@ -2,6 +2,7 @@ pragma solidity ^0.4.23;
 
 import "./MathUtil.sol";
 
+
 /// @title A navigatable sorted map that supports insertion, deletion, single item lookup,
 ///  and range lookup in logarithmic runtime.
 ///  Due to lack of generics in Solidity, both key and value are uint. One can trivially use this to
@@ -161,9 +162,9 @@ library TreeMap {
 
     // recalculate size
     // TODO: double check if these are required
-    require (newRootIdx > 0) ;
+    require(newRootIdx > 0);
     newRoot.size = _root.size;
-    require (_rootIdx > 0) ;
+    require(_rootIdx > 0);
     _root.size = _leftChild(_self, _root).size + _rightChild(_self, _root).size + 1;
   }
 
@@ -861,7 +862,7 @@ library TreeMap {
   returns(bool found, uint index)
   {
     Entry storage current = _self.entries[_self.rootIdx];
-    while(current.size > 0) {
+    while (current.size > 0) {
       if (current.key == _key) {
         index += _leftChild(_self, current).size;
         found = true;
