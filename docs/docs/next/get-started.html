@@ -1,0 +1,21 @@
+<html lang="en"><head><meta charset="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>Get Started · Solidity TreeMap</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta property="og:title" content="Get Started · Solidity TreeMap"/><meta property="og:type" content="website"/><meta property="og:url" content="https://saurfang.github.io/solidity-treemap/index.html"/><meta property="og:description" content="Install the library code as a regular npm package:"/><link rel="shortcut icon" href="/solidity-treemap/undefined"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:100,200,300,400,500,700,400italic,700italic"/><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><link rel="stylesheet" href="/solidity-treemap/css/main.css"/></head><body class="sideNavVisible"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/solidity-treemap/"><h2 class="headerTitle">Solidity TreeMap</h2></a><a href="/solidity-treemap/versions.html"><h3>next</h3></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li><a href="https://saurfang.github.io/solidity-treemap" target="_self">Home</a></li><li><a href="https://github.com/saurfang/solidity-treemap" target="_self">Github</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="container docsNavContainer" id="docsNav"><nav class="toc"><div class="toggleNav"><section class="navWrapper wrapper"><div class="navBreadcrumb wrapper"><div class="navToggle" id="navToggler"><i></i></div><h2><i>›</i><span>ABOUT</span></h2></div><div class="navGroups"><div class="navGroup navGroupActive"><h3>ABOUT</h3><ul><li class="navListItem navListItemActive"><a class="navItem navItemActive" href="/solidity-treemap/docs/next/get-started.html">Get Started</a></li></ul></div></div></section></div><script>
+          var toggler = document.getElementById('navToggler');
+          var nav = document.getElementById('docsNav');
+          toggler.onclick = function() {
+            nav.classList.toggle('docsSliderActive');
+          };
+        </script></nav></div><div class="container mainContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1>Get Started</h1></header><article><div><span><p>Install the library code as a regular npm package:</p>
+<pre><code class="hljs css bash">npm install -save solidity-treemap
+</code></pre>
+<p>You can then import the <code>TreeMap.sol</code> like so:</p>
+<pre><code class="hljs css solidity"><span class="hljs-keyword">import</span> <span class="hljs-string">"solidity-treemap/contracts/TreeMap.sol"</span>;
+
+contract TreeMapMock {
+  using TreeMap <span class="hljs-keyword">for</span> TreeMap.<span class="hljs-built_in">Map</span>;
+
+  TreeMap.<span class="hljs-built_in">Map</span> sortedMap1;
+  TreeMap.<span class="hljs-built_in">Map</span> sortedMap2;
+  ...
+}
+</code></pre>
+</span></div></article></div><div class="docs-prevnext"></div></div></div></div><footer class="nav-footer" id="footer"></footer></div></body></html>
