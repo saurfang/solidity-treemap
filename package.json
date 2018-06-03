@@ -1,8 +1,11 @@
 {
   "name": "solidity-treemap",
   "version": "0.0.1",
-  "description": "A Red-Black tree based Navigable Order Static Map in Solidity",
-  "main": "",
+  "description": "A Red-Black tree based Navigable Sorted Order Static Map in Solidity",
+  "files": [
+    "contracts",
+    "test"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/saurfang/solidity-treemap"
@@ -21,7 +24,12 @@
     "coverage": "./node_modules/.bin/solidity-coverage && cat coverage/lcov.info | node_modules/.bin/coveralls"
   },
   "keywords": [
-    "solidity"
+    "solidity",
+    "ethereum",
+    "smart",
+    "contracts",
+    "rbt",
+    "treemap"
   ],
   "author": "Forest Fang <forest.fang@outlook.com>",
   "license": "MIT",
@@ -39,9 +47,7 @@
     "solidity-coverage": "^0.5.4",
     "solium": "^1.1.7",
     "source-map-support": "^0.5.6",
-    "truffle": "^4.1.11"
-  },
-  "dependencies": {
+    "truffle": "^4.1.11",
     "openzeppelin-solidity": "^1.9.0"
   }
 }
