@@ -258,6 +258,10 @@ library TreeMap {
   internal
   returns(Entry storage entry)
   {
+    // workaround for compilation warning on `entry` potentially be unassigned
+    // in reality, it is guranteed to be assigned by the algorithm
+    entry = entry;
+
     if (_self.rootIdx == 0) {
       // insert into an empty tree
       (_self.rootIdx, entry) = _makeEntry(_self, _key, _value);
