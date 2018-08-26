@@ -1,6 +1,6 @@
 {
   "name": "solidity-treemap",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A Red-Black tree based Navigable Sorted Order Static Map in Solidity",
   "files": [
     "contracts",
